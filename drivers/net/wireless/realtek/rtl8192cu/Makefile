@@ -1,19 +1,11 @@
 EXTRA_CFLAGS += $(USER_EXTRA_CFLAGS)
 EXTRA_CFLAGS += -O1
 #EXTRA_CFLAGS += -O3
-EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -Wextra
+#EXTRA_CFLAGS += -Wall
+#EXTRA_CFLAGS += -Wextra
 #EXTRA_CFLAGS += -Werror
 #EXTRA_CFLAGS += -pedantic
 #EXTRA_CFLAGS += -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
-
-# The "$(call cc-option,-Wxxx)" macro only includes that option when it's
-# supported by the compiler used. It may only work on Debian systems.
-
-# Wdate-time was added in gcc-4.9
-EXTRA_CFLAGS += $(call cc-option,-Werror=date-time)
-# Wincompatible-pointer-types was added in gcc-5.0
-EXTRA_CFLAGS += $(call cc-option,-Werror=incompatible-pointer-types)
 
 EXTRA_CFLAGS += -Wno-unused-variable
 EXTRA_CFLAGS += -Wno-unused-value
@@ -22,15 +14,9 @@ EXTRA_CFLAGS += -Wno-unused-parameter
 EXTRA_CFLAGS += -Wno-unused-function
 EXTRA_CFLAGS += -Wno-unused
 
-# Relax some warnings from '-Wextra' so we won't get flooded with warnings
-EXTRA_CFLAGS += -Wno-sign-compare
-EXTRA_CFLAGS += -Wno-missing-field-initializers
-
-#EXTRA_CFLAGS += -Wno-uninitialized
+EXTRA_CFLAGS += -Wno-uninitialized
 
 EXTRA_CFLAGS += -I$(src)/include
-
-EXTRA_LDFLAGS += --strip-debug
 
 CONFIG_AUTOCFG_CP = n
 
@@ -402,7 +388,7 @@ KSRC ?= /lib/modules/2.6.31-770-g0e46b52/source
 endif
 
 ifeq ($(CONFIG_PLATFORM_FS_MX61), y)
-EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
+EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN 
 ARCH := arm
 CROSS_COMPILE := /home/share/CusEnv/FreeScale/arm-eabi-4.4.3/bin/arm-eabi-
 KSRC ?= /home/share/CusEnv/FreeScale/FS_kernel_env
@@ -603,6 +589,17 @@ strip:
 install:
 	install -p -m 644 $(MODULE_NAME).ko  $(MODDESTDIR)
 	/sbin/depmod -a ${KVER}
+	echo "blacklist rtl8192cu" >> /etc/modprobe.d/blacklist.conf
+
+dkms:	clean
+	rm -rf /usr/src/$(MODULE_NAME)-4.0.29
+	mkdir /usr/src/$(MODULE_NAME)-4.0.29 -p
+	cp . /usr/src/$(MODULE_NAME)-4.0.29 -a
+	rm -rf /usr/src/$(MODULE_NAME)-4.0.29/.git
+	dkms add -m $(MODULE_NAME) -v 4.0.29
+	dkms build -m $(MODULE_NAME) -v 4.0.29
+	dkms install -m $(MODULE_NAME) -v 4.0.29 --force
+	echo "blacklist rtl8192cu" >> /etc/modprobe.d/blacklist.conf
 
 uninstall:
 	rm -f $(MODDESTDIR)/$(MODULE_NAME).ko
@@ -627,3 +624,4 @@ clean:
 	cd os_dep/linux ; rm -fr *.mod.c *.mod *.o .*.cmd *.ko
 	cd os_dep ; rm -fr *.mod.c *.mod *.o .*.cmd *.ko
 endif
+
